@@ -19,4 +19,14 @@ export class StripeProvider implements PaymentProvider {
     console.warn("[StripeProvider] refundPayment not implemented");
     throw new Error("StripeProvider is not yet implemented.");
   }
+
+  async createSubscription(planId: string, customerId: string, metadata?: Record<string, any>): Promise<any> {
+    console.warn("[StripeProvider] createSubscription not implemented", { planId, customerId, metadata });
+    throw new Error("StripeProvider is not yet implemented.");
+  }
+
+  async cancelSubscription(subscriptionId: string, cancelAtPeriodEnd?: boolean): Promise<boolean> {
+    console.warn("[StripeProvider] cancelSubscription not implemented", { subscriptionId, cancelAtPeriodEnd });
+    throw new Error("StripeProvider is not yet implemented.");
+  }
 }

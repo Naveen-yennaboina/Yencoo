@@ -2,17 +2,19 @@
 
 import { Checkbox } from "@/components/ui/Checkbox";
 import { AccordionItem } from "@/components/ui/Accordion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
+import { fetchApi } from "@/lib/api";
+import { Loader2 } from "lucide-react";
 
-// Mock categories for UI
-const CATEGORIES = [
-  { id: "programming", label: "Programming", count: 124 },
-  { id: "cloud", label: "Cloud & DevOps", count: 85 },
-  { id: "ai", label: "Artificial Intelligence", count: 62 },
-  { id: "business", label: "Business", count: 45 },
-  { id: "design", label: "Design", count: 38 },
-];
+type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  _count?: {
+    courses: number;
+  };
+};
 
 const DIFFICULTIES = [
   { id: "BEGINNER", label: "Beginner" },
@@ -21,8 +23,23 @@ const DIFFICULTIES = [
 ];
 
 export function CourseFilters() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      setLoading(true);
+      const res = await fetchApi<{ data: Category[] }>("/api/categories?limit=100");
+      if (res.data) {
+        setCategories(res.data.data);
+      }
+      setLoading(false);
+    };
+    loadCategories();
+  }, []);
   
   const toggleCategory = (id: string) => {
     setSelectedCategories(prev => 
@@ -61,17 +78,25 @@ export function CourseFilters() {
           className="border-none"
           content={
             <div className="space-y-3">
-              {CATEGORIES.map(category => (
-                <div key={category.id} className="flex items-center justify-between">
-                  <Checkbox 
-                    id={`cat-${category.id}`} 
-                    label={category.label}
-                    checked={selectedCategories.includes(category.id)}
-                    onChange={() => toggleCategory(category.id)}
-                  />
-                  <span className="text-xs text-muted-foreground">{category.count}</span>
+              {loading ? (
+                <div className="flex justify-center p-4">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
-              ))}
+              ) : categories.length === 0 ? (
+                <div className="text-xs text-muted-foreground p-2">No categories found</div>
+              ) : (
+                categories.map(category => (
+                  <div key={category.id} className="flex items-center justify-between">
+                    <Checkbox 
+                      id={`cat-${category.id}`} 
+                      label={category.name}
+                      checked={selectedCategories.includes(category.id)}
+                      onChange={() => toggleCategory(category.id)}
+                    />
+                    <span className="text-xs text-muted-foreground">{category._count?.courses || 0}</span>
+                  </div>
+                ))
+              )}
             </div>
           }
         />

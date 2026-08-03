@@ -21,4 +21,14 @@ export interface PaymentProvider {
    * Process a refund
    */
   refundPayment(paymentId: string, amount?: number): Promise<boolean>;
+
+  /**
+   * Create a recurring subscription
+   */
+  createSubscription(planId: string, customerId: string, metadata?: Record<string, any>): Promise<any>;
+
+  /**
+   * Cancel an active subscription
+   */
+  cancelSubscription(subscriptionId: string, cancelAtPeriodEnd?: boolean): Promise<boolean>;
 }
