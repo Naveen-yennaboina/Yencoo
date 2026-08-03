@@ -7,7 +7,7 @@ import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { OtpInput } from "@/components/ui/OtpInput";
-import { Typography } from "@/components/ui/Typography";
+import { H3, MutedText } from "@/components/ui/Typography";
 import { PasswordStrength } from "./PasswordStrength";
 
 const variants = {
@@ -104,16 +104,16 @@ export function SignupWizard() {
   return (
     <div className="w-full max-w-md mx-auto overflow-hidden relative min-h-[400px]">
       <div className="mb-6">
-        <Typography variant="h3" className="mb-2">
+        <H3 className="mb-2">
           {step === 1 && "Create your account"}
           {step === 2 && "Verify your email"}
           {step === 3 && "Secure your account"}
-        </Typography>
-        <Typography variant="muted">
+        </H3>
+        <MutedText>
           {step === 1 && "Start your journey with Yencoo today."}
           {step === 2 && `We sent a 6-digit code to ${email}`}
           {step === 3 && "Choose a strong password."}
-        </Typography>
+        </MutedText>
       </div>
 
       <AnimatePresence custom={direction} mode="wait">

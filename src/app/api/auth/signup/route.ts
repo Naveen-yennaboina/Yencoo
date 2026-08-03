@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       // Step 1: Validate info, generate OTP, send email
       const result = signupStep1Schema.safeParse(body.data);
       if (!result.success) {
-        return NextResponse.json({ error: "Invalid data", details: result.error.errors }, { status: 400 });
+        return NextResponse.json({ error: "Invalid data", details: result.error.issues }, { status: 400 });
       }
 
       const { email, firstName, lastName, country } = result.data;
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
       // Step 3: Set Password
       const result = passwordSchema.safeParse(body.data);
       if (!result.success) {
-        return NextResponse.json({ error: "Invalid password format", details: result.error.errors }, { status: 400 });
+        return NextResponse.json({ error: "Invalid password format", details: result.error.issues }, { status: 400 });
       }
 
       const { email, password } = result.data;
