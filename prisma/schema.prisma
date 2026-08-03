@@ -97,17 +97,17 @@ model Language {
 }
 
 model Category {
-  id        String     @id @default(uuid()) @db.Uuid
-  name      String     @unique
-  slug      String     @unique
-  parentId  String?    @db.Uuid
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @unique
+  slug      String    @unique
+  parentId  String?   @db.Uuid
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  parent    Category?  @relation("CategoryToCategory", fields: [parentId], references: [id], onDelete: SetNull)
-  children  Category[] @relation("CategoryToCategory")
-  courses   Course[]
+  parent   Category?  @relation("CategoryToCategory", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryToCategory")
+  courses  Course[]
 
   @@index([parentId])
 }
@@ -116,39 +116,40 @@ model Country {
   id        String   @id @default(uuid()) @db.Uuid
   code      String   @unique @db.VarChar(2)
   name      String   @unique
+  dialCode  String?  @db.VarChar(10)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users     User[]
+  users User[]
 }
 
 model User {
-  id             String    @id @default(uuid()) @db.Uuid
-  email          String    @unique
+  id             String   @id @default(uuid()) @db.Uuid
+  email          String   @unique
   hashedPassword String?
   firstName      String?
   lastName       String?
   avatarUrl      String?
-  role           UserRole  @default(USER)
-  countryId      String?   @db.Uuid
-  
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  deletedAt      DateTime? // Soft delete
+  role           UserRole @default(USER)
+  countryId      String?  @db.Uuid
 
-  country        Country?  @relation(fields: [countryId], references: [id], onDelete: SetNull)
-  
-  preference     UserPreference?
-  
-  otpCodes       OTPCode[]
-  payments       Payment[]
-  enrollments    Enrollment[]
-  bookmarks      Bookmark[]
-  userRoadmaps   UserRoadmap[]
-  feedbacks      Feedback[]
-  orders         Order[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  country Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+
+  preference UserPreference?
+
+  otpCodes         OTPCode[]
+  payments         Payment[]
+  enrollments      Enrollment[]
+  bookmarks        Bookmark[]
+  userRoadmaps     UserRoadmap[]
+  feedbacks        Feedback[]
+  orders           Order[]
   purchasedCourses PurchasedCourse[]
-  invoices       Invoice[]
+  invoices         Invoice[]
 
   @@index([email])
 }
@@ -160,37 +161,37 @@ model OTPCode {
   purpose   OTPPurpose
   expiresAt DateTime
   createdAt DateTime   @default(now())
-  
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model UserPreference {
-  id                  String       @id @default(uuid()) @db.Uuid
-  userId              String       @unique @db.Uuid
-  preferredLanguageId String?      @db.Uuid
-  preferredVoice      String?
+  id                    String       @id @default(uuid()) @db.Uuid
+  userId                String       @unique @db.Uuid
+  preferredLanguageId   String?      @db.Uuid
+  preferredVoice        String?
   preferredLearningMode LearningMode @default(TEXT)
-  preferredTimezone   String?
-  preferredCurrency   String?
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
+  preferredTimezone     String?
+  preferredCurrency     String?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
 
-  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  language            Language?    @relation(fields: [preferredLanguageId], references: [id], onDelete: SetNull)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  language Language? @relation(fields: [preferredLanguageId], references: [id], onDelete: SetNull)
 }
 
 model Membership {
   id          String         @id @default(uuid()) @db.Uuid
-  name        String         
+  name        String
   type        MembershipType @unique
   price       Decimal        @db.Decimal(10, 2)
   description String?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  payments    Payment[]
+  payments Payment[]
 }
 
 model Payment {
@@ -199,42 +200,47 @@ model Payment {
   membershipId String?       @db.Uuid
   amount       Decimal       @db.Decimal(10, 2)
   status       PaymentStatus @default(PENDING)
-  providerId   String?       // e.g., Razorpay order ID
+  providerId   String? // e.g., Razorpay order ID
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  membership   Membership?   @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membership Membership? @relation(fields: [membershipId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([status])
 }
 
 model Course {
-  id              String          @id @default(uuid()) @db.Uuid
-  title           String
-  slug            String          @unique
-  description     String?         @db.Text
-  thumbnailUrl    String?
-  status          CourseStatus    @default(DRAFT)
-  difficultyLevel DifficultyLevel @default(BEGINNER)
-  audioEnabled         Boolean         @default(false)
-  aiExplanationEnabled Boolean         @default(false)
-  translationEnabled   Boolean         @default(false)
-  estimatedAudioDuration Int?          // in minutes
-  categoryId      String?         @db.Uuid
-  learningOutcomes String[]
-  requirements    String[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  deletedAt       DateTime?       // Soft delete
+  id                     String          @id @default(uuid()) @db.Uuid
+  title                  String
+  slug                   String          @unique
+  description            String?         @db.Text
+  thumbnailUrl           String?
+  status                 CourseStatus    @default(DRAFT)
+  difficultyLevel        DifficultyLevel @default(BEGINNER)
+  audioEnabled           Boolean         @default(false)
+  aiExplanationEnabled   Boolean         @default(false)
+  translationEnabled     Boolean         @default(false)
+  estimatedAudioDuration Int? // in minutes
+  estimatedReadingTime   Int? // in minutes
+  wordCount              Int             @default(0)
+  seoTitle               String?
+  seoDescription         String?         @db.Text
+  price                  Decimal?        @db.Decimal(10, 2)
+  categoryId             String?         @db.Uuid
+  learningOutcomes       String[]
+  requirements           String[]
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  deletedAt              DateTime? // Soft delete
 
-  category        Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  modules         CourseModule[]
-  enrollments     Enrollment[]
-  roadmapCourses  RoadmapCourse[]
-  feedbacks       Feedback[]
-  purchasedBy     PurchasedCourse[]
+  category       Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  modules        CourseModule[]
+  enrollments    Enrollment[]
+  roadmapCourses RoadmapCourse[]
+  feedbacks      Feedback[]
+  purchasedBy    PurchasedCourse[]
 
   @@index([status])
   @@index([slug])
@@ -250,30 +256,30 @@ model CourseModule {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  lessons     Lesson[]
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
 
-  @@index([courseId])
   @@unique([courseId, order])
+  @@index([courseId])
 }
 
 model Lesson {
-  id          String   @id @default(uuid()) @db.Uuid
-  moduleId    String   @db.Uuid
-  title       String
-  content     String?  @db.Text
-  videoUrl    String?
-  order       Int      @default(0)
-  isFree      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid()) @db.Uuid
+  moduleId  String   @db.Uuid
+  title     String
+  content   String?  @db.Text
+  videoUrl  String?
+  order     Int      @default(0)
+  isFree    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  module      CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  progress    LessonProgress[]
-  bookmarks   Bookmark[]
+  module    CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress  LessonProgress[]
+  bookmarks Bookmark[]
 
-  @@index([moduleId])
   @@unique([moduleId, order])
+  @@index([moduleId])
 }
 
 model Enrollment {
@@ -283,10 +289,10 @@ model Enrollment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  
-  progress  LessonProgress[]
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  progress LessonProgress[]
 
   @@unique([userId, courseId])
   @@index([userId])
@@ -294,16 +300,16 @@ model Enrollment {
 }
 
 model LessonProgress {
-  id           String   @id @default(uuid()) @db.Uuid
-  enrollmentId String   @db.Uuid
-  lessonId     String   @db.Uuid
-  isCompleted  Boolean  @default(false)
+  id           String    @id @default(uuid()) @db.Uuid
+  enrollmentId String    @db.Uuid
+  lessonId     String    @db.Uuid
+  isCompleted  Boolean   @default(false)
   completedAt  DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  lesson       Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@unique([enrollmentId, lessonId])
   @@index([enrollmentId])
@@ -315,24 +321,24 @@ model Bookmark {
   lessonId  String   @db.Uuid
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@unique([userId, lessonId])
   @@index([userId])
 }
 
 model Roadmap {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
   title       String
-  slug        String   @unique
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  slug        String    @unique
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime? // Soft delete
 
-  courses     RoadmapCourse[]
-  users       UserRoadmap[]
+  courses RoadmapCourse[]
+  users   UserRoadmap[]
 }
 
 model RoadmapCourse {
@@ -342,8 +348,8 @@ model RoadmapCourse {
   order     Int      @default(0)
   createdAt DateTime @default(now())
 
-  roadmap   Roadmap  @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  roadmap Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([roadmapId, courseId])
   @@index([roadmapId])
@@ -356,8 +362,8 @@ model UserRoadmap {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  roadmap   Roadmap  @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roadmap Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roadmapId])
   @@index([userId])
@@ -372,27 +378,27 @@ model Feedback {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([courseId])
   @@index([userId])
 }
 
 model PricingPlan {
-  id          String       @id @default(uuid()) @db.Uuid
-  name        String
-  description String?
-  stripePriceId String?    @unique // External ID
-  razorpayPlanId String?   @unique // External ID
-  amount      Decimal      @db.Decimal(10, 2)
-  currency    String       @default("USD") @db.VarChar(3)
-  interval    PlanInterval @default(MONTH)
-  isActive    Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id             String       @id @default(uuid()) @db.Uuid
+  name           String
+  description    String?
+  stripePriceId  String?      @unique // External ID
+  razorpayPlanId String?      @unique // External ID
+  amount         Decimal      @db.Decimal(10, 2)
+  currency       String       @default("USD") @db.VarChar(3)
+  interval       PlanInterval @default(MONTH)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  orders      Order[]
+  orders Order[]
 }
 
 model Coupon {
@@ -407,31 +413,31 @@ model Coupon {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  orders        Order[]
+  orders Order[]
 }
 
 model Order {
-  id             String       @id @default(uuid()) @db.Uuid
-  userId         String       @db.Uuid
-  planId         String?      @db.Uuid
-  couponId       String?      @db.Uuid
-  amount         Decimal      @db.Decimal(10, 2)
-  tax            Decimal      @default(0) @db.Decimal(10, 2)
-  total          Decimal      @db.Decimal(10, 2)
-  currency       String       @default("USD") @db.VarChar(3)
-  status         OrderStatus  @default(PENDING)
-  providerId     String?      // e.g., Stripe PaymentIntent ID / Razorpay Order ID
-  subscriptionId String?      // e.g., Stripe Subscription ID
+  id                 String              @id @default(uuid()) @db.Uuid
+  userId             String              @db.Uuid
+  planId             String?             @db.Uuid
+  couponId           String?             @db.Uuid
+  amount             Decimal             @db.Decimal(10, 2)
+  tax                Decimal             @default(0) @db.Decimal(10, 2)
+  total              Decimal             @db.Decimal(10, 2)
+  currency           String              @default("USD") @db.VarChar(3)
+  status             OrderStatus         @default(PENDING)
+  providerId         String? // e.g., Stripe PaymentIntent ID / Razorpay Order ID
+  subscriptionId     String? // e.g., Stripe Subscription ID
   subscriptionStatus SubscriptionStatus?
-  currentPeriodEnd DateTime?
-  cancelAtPeriodEnd Boolean   @default(false)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan           PricingPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
-  coupon         Coupon?      @relation(fields: [couponId], references: [id], onDelete: SetNull)
-  invoices       Invoice[]
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan     PricingPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  coupon   Coupon?      @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  invoices Invoice[]
 
   @@index([userId])
   @@index([status])
@@ -443,37 +449,36 @@ model PurchasedCourse {
   courseId  String   @db.Uuid
   amount    Decimal  @db.Decimal(10, 2)
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
 }
 
 model Invoice {
-  id            String   @id @default(uuid()) @db.Uuid
-  userId        String   @db.Uuid
-  orderId       String   @db.Uuid
-  amount        Decimal  @db.Decimal(10, 2)
-  currency      String   @default("USD") @db.VarChar(3)
+  id            String      @id @default(uuid()) @db.Uuid
+  userId        String      @db.Uuid
+  orderId       String      @db.Uuid
+  amount        Decimal     @db.Decimal(10, 2)
+  currency      String      @default("USD") @db.VarChar(3)
   status        OrderStatus
   invoicePdfUrl String?
-  providerId    String?  // External Invoice ID
-  createdAt     DateTime @default(now())
-  
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  providerId    String? // External Invoice ID
+  createdAt     DateTime    @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model PaymentWebhookLog {
-  id          String   @id @default(uuid()) @db.Uuid
-  provider    String   // "STRIPE" or "RAZORPAY"
-  eventType   String
-  payload     Json
-  processed   Boolean  @default(false)
-  error       String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid()) @db.Uuid
+  provider  String // "STRIPE" or "RAZORPAY"
+  eventType String
+  payload   Json
+  processed Boolean  @default(false)
+  error     String?
+  createdAt DateTime @default(now())
 }
-

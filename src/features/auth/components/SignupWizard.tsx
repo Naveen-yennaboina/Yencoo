@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { OtpInput } from "@/components/ui/OtpInput";
 import { H3, MutedText } from "@/components/ui/Typography";
 import { PasswordStrength } from "./PasswordStrength";
+import { CountrySelect, Country } from "@/components/ui/CountrySelect";
 
 const variants = {
   enter: (direction: number) => {
@@ -36,13 +37,24 @@ export function SignupWizard() {
   const [step, setStep] = React.useState(1);
   const [direction, setDirection] = React.useState(1);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState("");
+  const [error, setError] = React.useState<string | {field: string, message: string}[] | null>(null);
 
   // Step 1 Data
-  const [country, setCountry] = React.useState("US");
-  const [firstName, setFirstName] = React.useState("");
-  const [lastName, setLastName] = React.useState("");
+  const [country, setCountry] = React.useState("");
+  const [countryData, setCountryData] = React.useState<Country | null>(null);
+  const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
+
+  React.useEffect(() => {
+    // Auto-detect country code from browser locale (e.g. en-US -> US)
+    try {
+      const locale = Intl.DateTimeFormat().resolvedOptions().locale;
+      const parsedCountry = locale.split("-")[1] || "US";
+      setCountry(parsedCountry);
+    } catch (e) {
+      setCountry("US");
+    }
+  }, []);
 
   // Step 2 Data
   const [otp, setOtp] = React.useState("");
@@ -52,18 +64,34 @@ export function SignupWizard() {
   const [confirmPassword, setConfirmPassword] = React.useState("");
 
   const handleNextStep = async () => {
-    setError("");
+    setError(null);
     setIsLoading(true);
 
     try {
       if (step === 1) {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const res = await fetch("/api/auth/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ step: 1, data: { country, firstName, lastName, email } }),
+          body: JSON.stringify({ 
+            step: 1, 
+            data: { 
+              country: countryData?.name || country,
+              countryCode: country,
+              fullName, 
+              email,
+              timezone
+            } 
+          }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to send OTP");
+        if (!res.ok) {
+          if (res.status === 400 && process.env.NODE_ENV === "development") {
+            console.log("Response", data);
+          }
+          if (data.errors) throw data.errors;
+          throw new Error(data.message || data.error || "Failed to send OTP");
+        }
       } else if (step === 2) {
         const res = await fetch("/api/auth/signup", {
           method: "POST",
@@ -71,7 +99,13 @@ export function SignupWizard() {
           body: JSON.stringify({ step: 2, data: { email, otp } }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Invalid OTP");
+        if (!res.ok) {
+          if (res.status === 400 && process.env.NODE_ENV === "development") {
+            console.log("Response", data);
+          }
+          if (data.errors) throw data.errors;
+          throw new Error(data.message || data.error || "Invalid OTP");
+        }
       } else if (step === 3) {
         if (password !== confirmPassword) throw new Error("Passwords do not match");
         const res = await fetch("/api/auth/signup", {
@@ -80,7 +114,13 @@ export function SignupWizard() {
           body: JSON.stringify({ step: 3, data: { email, password, confirmPassword } }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to create account");
+        if (!res.ok) {
+          if (res.status === 400 && process.env.NODE_ENV === "development") {
+            console.log("Response", data);
+          }
+          if (data.errors) throw data.errors;
+          throw new Error(data.message || data.error || "Failed to create account");
+        }
         
         router.push("/dashboard");
         return;
@@ -89,14 +129,18 @@ export function SignupWizard() {
       setDirection(1);
       setStep((prev) => prev + 1);
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      if (Array.isArray(err)) {
+        setError(err);
+      } else {
+        setError(err.message || "An error occurred");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const handlePrevStep = () => {
-    setError("");
+    setError(null);
     setDirection(-1);
     setStep((prev) => prev - 1);
   };
@@ -128,38 +172,36 @@ export function SignupWizard() {
           className="space-y-4"
         >
           {error && (
-            <div className="p-3 text-sm text-destructive-foreground bg-destructive/10 rounded-md">
-              {error}
+            <div className="p-3 text-sm text-destructive-foreground bg-destructive/10 border border-destructive/20 rounded-md">
+              {Array.isArray(error) ? (
+                <ul className="list-disc pl-5 space-y-1">
+                  {error.map((err, i) => (
+                    <li key={i}>{err.message}</li>
+                  ))}
+                </ul>
+              ) : (
+                error
+              )}
             </div>
           )}
 
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Country Code</label>
-                <Input
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  placeholder="e.g. US"
+                <label className="text-sm font-medium">Country / Region</label>
+                <CountrySelect 
+                  value={country} 
+                  onChange={setCountry} 
+                  onCountrySelect={setCountryData} 
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">First Name</label>
-                  <Input
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="John"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Last Name</label>
-                  <Input
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Doe"
-                  />
-                </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Full Name</label>
+                <Input
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="John Doe"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email Address</label>

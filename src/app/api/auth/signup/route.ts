@@ -15,29 +15,42 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { step } = body;
 
+    if (process.env.NODE_ENV === "development") {
+      console.log("Signup Request", body);
+    }
+
     if (step === 1) {
-      // Step 1: Validate info, generate OTP, send email
       const result = signupStep1Schema.safeParse(body.data);
       if (!result.success) {
-        return NextResponse.json({ error: "Invalid data", details: result.error.issues }, { status: 400 });
+        if (process.env.NODE_ENV === "development") {
+          console.log("Validation Error", result.error.flatten());
+        }
+        return NextResponse.json({ 
+          success: false, 
+          message: "Validation failed", 
+          errors: result.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          })) 
+        }, { status: 400 });
       }
 
-      const { email, firstName, lastName, country } = result.data;
+      const { email, fullName, country, countryCode, currency, timezone } = result.data;
+
+      // Split full name
+      const nameParts = fullName.trim().split(" ");
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
 
       // Check if user already exists
-      const existingUser = await db.user.findUnique({ where: { email } });
-      if (existingUser) {
+      let user = await db.user.findUnique({ where: { email } });
+      
+      if (user && user.hashedPassword) {
         return NextResponse.json({ error: "User already exists with this email" }, { status: 409 });
       }
 
-      // In a real app, you might want to create a temporary user or store this in a session/cache.
-      // Since we don't have Redis, we'll create the user with a pending status or just store the OTP.
-      // We will create the user with no password, and set them as inactive/pending via OTP.
-      
-      let user = await db.user.findFirst({ where: { email, hashedPassword: null } });
-      
       // Let's resolve country to countryId. We'll find by code or name.
-      const countryRecord = await db.country.findFirst({ where: { OR: [{ code: country }, { name: country }] } });
+      const countryRecord = await db.country.findFirst({ where: { OR: [{ code: countryCode || country }, { name: country }] } });
       
       if (!user) {
         user = await db.user.create({
@@ -47,6 +60,31 @@ export async function POST(request: Request) {
             lastName,
             countryId: countryRecord?.id || null,
           },
+        });
+      } else {
+        user = await db.user.update({
+          where: { email },
+          data: {
+            firstName,
+            lastName,
+            countryId: countryRecord?.id || null,
+          }
+        });
+      }
+
+      // Update or create user preferences
+      if (currency || timezone) {
+        await db.userPreference.upsert({
+          where: { userId: user.id },
+          create: {
+            userId: user.id,
+            preferredCurrency: currency,
+            preferredTimezone: timezone,
+          },
+          update: {
+            preferredCurrency: currency,
+            preferredTimezone: timezone,
+          }
         });
       }
 
@@ -74,10 +112,19 @@ export async function POST(request: Request) {
     }
 
     if (step === 2) {
-      // Step 2: Verify OTP
       const result = otpSchema.safeParse(body.data);
       if (!result.success) {
-        return NextResponse.json({ error: "Invalid OTP format" }, { status: 400 });
+        if (process.env.NODE_ENV === "development") {
+          console.log("Validation Error", result.error.flatten());
+        }
+        return NextResponse.json({ 
+          success: false, 
+          message: "Validation failed", 
+          errors: result.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          })) 
+        }, { status: 400 });
       }
 
       const { email, otp } = result.data;
@@ -110,10 +157,19 @@ export async function POST(request: Request) {
     }
 
     if (step === 3) {
-      // Step 3: Set Password
       const result = passwordSchema.safeParse(body.data);
       if (!result.success) {
-        return NextResponse.json({ error: "Invalid password format", details: result.error.issues }, { status: 400 });
+        if (process.env.NODE_ENV === "development") {
+          console.log("Validation Error", result.error.flatten());
+        }
+        return NextResponse.json({ 
+          success: false, 
+          message: "Validation failed", 
+          errors: result.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          })) 
+        }, { status: 400 });
       }
 
       const { email, password } = result.data;

@@ -1,4 +1,4 @@
-import { Home, Users, Settings } from "lucide-react";
+import { Home } from "lucide-react";
 
 export const mainNav = [
   {
@@ -7,13 +7,8 @@ export const mainNav = [
     icon: Home,
   },
   {
-    title: "Users",
-    href: "/users",
-    icon: Users,
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: Settings,
-  },
+    title: "Courses",
+    href: "/courses",
+    // icon: BookOpen, // Assuming icon isn't necessary here or we can omit it
+  }
 ];

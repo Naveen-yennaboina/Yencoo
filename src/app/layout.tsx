@@ -2,11 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Poppins, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { LayoutProvider } from "@/components/providers/LayoutProvider";
 import { ErrorBoundary } from "@/components/providers/ErrorBoundary";
-import { Navbar } from "@/features/core/components/Navbar";
-import { Sidebar } from "@/features/core/components/Sidebar";
-import { Footer } from "@/features/core/components/Footer";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -44,18 +40,9 @@ export default function RootLayout({
             enableSystem={false}
             disableTransitionOnChange
           >
-            <LayoutProvider>
-              <div className="relative flex min-h-screen flex-col w-full">
-                <Navbar />
-                <div className="flex flex-1 items-start w-full">
-                  <Sidebar />
-                  <main className="flex-1 w-full min-w-0">
-                    {children}
-                  </main>
-                </div>
-                <Footer />
-              </div>
-            </LayoutProvider>
+            <div className="relative flex min-h-screen flex-col w-full">
+              {children}
+            </div>
           </ThemeProvider>
         </ErrorBoundary>
       </body>

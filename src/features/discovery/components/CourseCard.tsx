@@ -7,7 +7,7 @@ import { Rating } from "@/components/ui/Rating";
 import { Course, DifficultyLevel } from "@prisma/client";
 
 // Extension of Prisma Course with the fields we need for the card
-export interface CourseCardData extends Partial<Course> {
+export interface CourseCardData extends Omit<Partial<Course>, "price"> {
   id: string;
   slug: string;
   title: string;

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const navLinks = [
   { name: "Courses", href: "/courses" },
@@ -43,6 +44,7 @@ export function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
+          <ThemeToggle />
           <Button variant="ghost" onClick={() => router.push("/login")}>
             Log in
           </Button>
@@ -51,12 +53,15 @@ export function Navbar() {
           </Button>
         </div>
 
-        <button
-          className="md:hidden p-2 text-muted-foreground hover:text-foreground"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          <ThemeToggle />
+          <button
+            className="p-2 text-muted-foreground hover:text-foreground"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </Container>
 
       {/* Mobile Menu */}
@@ -70,6 +75,13 @@ export function Navbar() {
             className="absolute top-16 left-0 w-full bg-background border-b shadow-lg md:hidden"
           >
             <Container className="py-4 flex flex-col space-y-4">
+              <Link
+                href="/"
+                className="text-base font-medium px-4 py-2 hover:bg-muted rounded-md"
+                onClick={() => setIsOpen(false)}
+              >
+                Home
+              </Link>
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
@@ -80,7 +92,8 @@ export function Navbar() {
                   {link.name}
                 </Link>
               ))}
-              <div className="border-t pt-4 flex flex-col gap-2 px-4">
+              <hr className="my-2 border-border" />
+              <div className="flex flex-col gap-2 px-4">
                 <Button variant="outline" className="w-full" onClick={() => { setIsOpen(false); router.push("/login"); }}>
                   Log in
                 </Button>

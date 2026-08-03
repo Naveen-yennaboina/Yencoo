@@ -1,98 +1,68 @@
 import { Container } from "@/components/ui/Container";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Select } from "@/components/ui/Select";
-import { CourseCard, CourseCardData } from "@/features/discovery/components/CourseCard";
+import { CourseCard } from "@/features/discovery/components/CourseCard";
 import { CourseFilters } from "@/features/discovery/components/CourseFilters";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext, PaginationEllipsis } from "@/components/ui/Pagination";
+import { db as prisma } from "@/lib/db";
+import { serializeDecimals } from "@/lib/serializers/decimal";
+import { Metadata } from "next";
 
-// Mock data for the catalog
-const MOCK_COURSES: CourseCardData[] = [
-  {
-    id: "1",
-    slug: "nextjs-masterclass",
-    title: "Next.js 15 Masterclass: App Router to Production",
-    thumbnailUrl: null,
-    difficultyLevel: "INTERMEDIATE",
-    estimatedAudioDuration: 420,
-    aiExplanationEnabled: true,
-    category: { name: "Programming" },
-    rating: 4.8,
-    reviewCount: 342,
-    price: 99.99,
-  },
-  {
-    id: "2",
-    slug: "aws-cloud-architect",
-    title: "AWS Cloud Architect Certification Prep",
-    thumbnailUrl: null,
-    difficultyLevel: "ADVANCED",
-    estimatedAudioDuration: 1200,
-    aiExplanationEnabled: true,
-    category: { name: "Cloud & DevOps" },
-    rating: 4.9,
-    reviewCount: 890,
-    price: 149.00,
-  },
-  {
-    id: "3",
-    slug: "intro-to-python",
-    title: "Introduction to Python Programming",
-    thumbnailUrl: null,
-    difficultyLevel: "BEGINNER",
-    estimatedAudioDuration: 300,
-    aiExplanationEnabled: false,
-    category: { name: "Programming" },
-    rating: 4.5,
-    reviewCount: 156,
-    price: 0,
-  },
-  {
-    id: "4",
-    slug: "ai-prompt-engineering",
-    title: "AI Prompt Engineering for Developers",
-    thumbnailUrl: null,
-    difficultyLevel: "BEGINNER",
-    estimatedAudioDuration: 180,
-    aiExplanationEnabled: true,
-    category: { name: "Artificial Intelligence" },
-    rating: 4.7,
-    reviewCount: 420,
-    price: 49.99,
-  },
-  {
-    id: "5",
-    slug: "system-design-interview",
-    title: "Cracking the System Design Interview",
-    thumbnailUrl: null,
-    difficultyLevel: "ADVANCED",
-    estimatedAudioDuration: 600,
-    aiExplanationEnabled: true,
-    category: { name: "Programming" },
-    rating: 4.9,
-    reviewCount: 2100,
-    price: 199.00,
-  },
-  {
-    id: "6",
-    slug: "ui-ux-fundamentals",
-    title: "UI/UX Design Fundamentals",
-    thumbnailUrl: null,
-    difficultyLevel: "BEGINNER",
-    estimatedAudioDuration: 240,
-    aiExplanationEnabled: false,
-    category: { name: "Design" },
-    rating: 4.6,
-    reviewCount: 89,
-    price: 79.99,
-  },
-];
-
-export const metadata = {
+export const metadata: Metadata = {
   title: "Explore Courses | Yencoo",
   description: "Browse our comprehensive catalog of premium tech and business courses.",
 };
 
-export default function CoursesCatalogPage() {
+export default async function CoursesCatalogPage({
+  searchParams
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const params = await searchParams;
+  
+  const page = typeof params.page === 'string' ? parseInt(params.page) : 1;
+  const limit = 12;
+  const skip = (page - 1) * limit;
+  const search = typeof params.search === 'string' ? params.search : undefined;
+  const categoryId = typeof params.category === 'string' ? params.category : undefined;
+  
+  const sort = typeof params.sort === 'string' ? params.sort : "newest";
+  
+  let orderBy: any = { createdAt: "desc" };
+  if (sort === "popular") {
+    // using reviews or students if we had it, fallback to createdAt for now
+    orderBy = { createdAt: "desc" };
+  } else if (sort === "rating") {
+    orderBy = { createdAt: "desc" };
+  } else if (sort === "price_asc") {
+    orderBy = { price: "asc" };
+  } else if (sort === "price_desc") {
+    orderBy = { price: "desc" };
+  }
+
+  const where = {
+    status: "PUBLISHED" as const,
+    deletedAt: null,
+    ...(search ? { title: { contains: search, mode: 'insensitive' as const } } : {}),
+    ...(categoryId ? { categoryId } : {}),
+  };
+
+  const [coursesRaw, total] = await Promise.all([
+    prisma.course.findMany({
+      where,
+      include: {
+        category: true,
+      },
+      orderBy,
+      skip,
+      take: limit,
+    }),
+    prisma.course.count({ where }),
+  ]);
+
+  const courses = serializeDecimals(coursesRaw);
+  const totalPages = Math.ceil(total / limit);
+
   return (
     <div className="min-h-screen bg-background pb-20 pt-10">
       <Container>
@@ -117,15 +87,16 @@ export default function CoursesCatalogPage() {
             {/* Top Toolbar */}
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
               <div className="w-full sm:max-w-xs">
-                <SearchInput placeholder="Search courses..." />
+                <SearchInput placeholder="Search courses..." defaultValue={search} />
               </div>
               
               <div className="flex items-center gap-4 w-full sm:w-auto">
                 <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  Showing 6 of 142 courses
+                  Showing {courses.length} of {total} courses
                 </span>
                 <div className="w-full sm:w-48">
                   <Select 
+                    defaultValue={sort}
                     options={[
                       { label: "Most Popular", value: "popular" },
                       { label: "Highest Rated", value: "rating" },
@@ -140,38 +111,43 @@ export default function CoursesCatalogPage() {
 
             {/* Course Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {MOCK_COURSES.map(course => (
-                <div key={course.id} className="h-[380px]">
-                  <CourseCard course={course} />
+              {courses.length === 0 ? (
+                <div className="col-span-full py-12 text-center text-muted-foreground">
+                  No courses found matching your criteria.
                 </div>
-              ))}
+              ) : (
+                courses.map((course: any) => (
+                  <div key={course.id} className="h-[380px]">
+                    <CourseCard course={course} />
+                  </div>
+                ))
+              )}
             </div>
 
             {/* Pagination */}
-            <div className="pt-8 border-t border-border mt-8">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious />
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink isActive>1</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink>2</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink>3</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationNext />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
+            {totalPages > 1 && (
+              <div className="pt-8 border-t border-border mt-8">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious href={page > 1 ? `?page=${page - 1}` : undefined} />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: totalPages }).map((_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink href={`?page=${i + 1}`} isActive={page === i + 1}>
+                          {i + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                    <PaginationItem>
+                      <PaginationNext href={page < totalPages ? `?page=${page + 1}` : undefined} />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
           </main>
         </div>
       </Container>

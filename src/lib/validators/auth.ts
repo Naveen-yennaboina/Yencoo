@@ -2,8 +2,10 @@ import { z } from "zod";
 
 export const signupStep1Schema = z.object({
   country: z.string().min(1, "Country is required"),
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
+  countryCode: z.string().optional(),
+  currency: z.string().optional(),
+  timezone: z.string().optional(),
+  fullName: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
 });
 

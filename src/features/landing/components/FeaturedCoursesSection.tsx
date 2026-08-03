@@ -8,44 +8,13 @@ import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { H2, H4, Lead, SmallText } from "@/components/ui/Typography";
+import Link from "next/link";
 
-const featuredCourses = [
-  {
-    id: 1,
-    title: "Complete Web Development Bootcamp 2026",
-    instructor: "Dr. Angela Yu",
-    rating: 4.9,
-    students: "120k",
-    duration: "65h",
-    level: "Beginner",
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&h=400&fit=crop",
-    category: "Programming",
-  },
-  {
-    id: 2,
-    title: "Machine Learning A-Z: Hands-On Python",
-    instructor: "Kirill Eremenko",
-    rating: 4.8,
-    students: "85k",
-    duration: "42h",
-    level: "Intermediate",
-    image: "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=600&h=400&fit=crop",
-    category: "AI",
-  },
-  {
-    id: 3,
-    title: "UI/UX Design Masterclass",
-    instructor: "Gary Simon",
-    rating: 4.9,
-    students: "45k",
-    duration: "28h",
-    level: "All Levels",
-    image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=400&fit=crop",
-    category: "Design",
-  },
-];
+export function FeaturedCoursesSection({ courses = [] }: { courses?: any[] }) {
+  if (courses.length === 0) {
+    return null;
+  }
 
-export function FeaturedCoursesSection() {
   return (
     <section className="py-24">
       <Container>
@@ -56,65 +25,100 @@ export function FeaturedCoursesSection() {
               Hand-picked courses by industry experts to help you build real-world skills.
             </Lead>
           </div>
-          <Button variant="outline" className="hidden md:flex">
-            View All Courses
-          </Button>
+          <Link href="/courses">
+            <Button variant="outline" className="hidden md:flex">
+              View All Courses
+            </Button>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featuredCourses.map((course, index) => (
+          {courses.map((course, index) => (
             <motion.div
               key={course.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1, duration: 0.5 }}
-              className="group flex flex-col rounded-2xl border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+              className="group flex flex-col rounded-2xl border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
             >
-              <div className="relative aspect-video overflow-hidden">
-                <Image
-                  src={course.image}
-                  alt={course.title}
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                />
-                <div className="absolute top-3 left-3">
-                  <Badge variant="secondary" className="bg-background/80 backdrop-blur-md">
-                    {course.category}
-                  </Badge>
+              <Link href={`/courses/${course.slug || course.id}`} className="flex flex-col h-full">
+                <div className="relative aspect-video overflow-hidden bg-muted">
+                  {course.thumbnailUrl ? (
+                    <Image
+                      src={course.thumbnailUrl}
+                      alt={course.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground transition-transform duration-500 group-hover:scale-105">
+                      <ImageIcon className="h-10 w-10 opacity-50" />
+                    </div>
+                  )}
+                  {course.category?.name && (
+                    <div className="absolute top-3 left-3">
+                      <Badge variant="secondary" className="bg-background/80 backdrop-blur-md">
+                        {course.category.name}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
-              </div>
-              
-              <div className="p-6 flex flex-col flex-1">
-                <H4 className="mb-2 line-clamp-2">{course.title}</H4>
-                <SmallText className="text-muted-foreground mb-4">By {course.instructor}</SmallText>
                 
-                <div className="flex items-center gap-1 text-sm font-medium text-amber-500 mb-4">
-                  <Star className="h-4 w-4 fill-amber-500" />
-                  <span>{course.rating}</span>
-                  <span className="text-muted-foreground ml-1 font-normal">({course.students} students)</span>
-                </div>
-                
-                <div className="mt-auto pt-4 border-t flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{course.duration}</span>
+                <div className="p-6 flex flex-col flex-1">
+                  <H4 className="mb-2 line-clamp-2">{course.title}</H4>
+                  
+                  <div className="flex items-center gap-1 text-sm font-medium text-amber-500 mb-4 mt-2">
+                    <Star className="h-4 w-4 fill-amber-500" />
+                    <span>4.9</span>
+                    <span className="text-muted-foreground ml-1 font-normal">(120 reviews)</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <BookOpen className="h-4 w-4" />
-                    <span>{course.level}</span>
+                  
+                  <div className="mt-auto pt-4 border-t flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      <span>{course.estimatedAudioDuration || course.estimatedReadingTime || "5"}h</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <BookOpen className="h-4 w-4" />
+                      <span>{course.difficultyLevel?.toLowerCase().replace(/^\w/, (c: string) => c.toUpperCase()) || "All Levels"}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             </motion.div>
           ))}
         </div>
         
-        <Button variant="outline" className="w-full mt-8 md:hidden">
-          View All Courses
-        </Button>
+        <Link href="/courses">
+          <Button variant="outline" className="w-full mt-8 md:hidden">
+            View All Courses
+          </Button>
+        </Link>
       </Container>
     </section>
+  );
+}
+
+// Added an icon for fallback
+function ImageIcon(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+      <circle cx="9" cy="9" r="2" />
+      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+    </svg>
   );
 }

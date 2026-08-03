@@ -32,7 +32,14 @@ export function CourseFilters() {
   useEffect(() => {
     const loadCategories = async () => {
       setLoading(true);
-      const res = await fetchApi<{ data: Category[] }>("/api/categories?limit=100");
+      const url = "/categories?limit=100";
+      console.log("Requested URL:", `${process.env.NEXT_PUBLIC_API_URL || ""}${url}`);
+      
+      const res = await fetchApi<{ data: Category[] }>(url);
+      
+      console.log("Response status:", res.status);
+      console.log("Response body:", res.data);
+      
       if (res.data) {
         setCategories(res.data.data);
       }

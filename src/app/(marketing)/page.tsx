@@ -9,18 +9,37 @@ import { TestimonialsSection } from "@/features/landing/components/TestimonialsS
 import { PricingPreviewSection } from "@/features/landing/components/PricingPreviewSection";
 import { FAQSection } from "@/features/landing/components/FAQSection";
 import { NewsletterSection } from "@/features/landing/components/NewsletterSection";
+import { db as prisma } from "@/lib/db";
+import { serializeDecimals } from "@/lib/serializers/decimal";
 
 export const metadata: Metadata = {
   title: "Yencoo | From Curious to Capable",
   description: "Learn the skills that shape your future with Yencoo. Premium online courses, personalized roadmaps, and AI-assisted learning.",
 };
 
-export default function LandingPage() {
+async function getFeaturedCourses() {
+  return await prisma.course.findMany({
+    where: { 
+      status: "PUBLISHED",
+      deletedAt: null
+    },
+    take: 3,
+    orderBy: { createdAt: "desc" },
+    include: {
+      category: true
+    }
+  });
+}
+
+export default async function LandingPage() {
+  const featuredCoursesRaw = await getFeaturedCourses();
+  const featuredCourses = serializeDecimals(featuredCoursesRaw);
+
   return (
     <>
       <HeroSection />
       <LearningCategoriesSection />
-      <FeaturedCoursesSection />
+      <FeaturedCoursesSection courses={featuredCourses} />
       <LearningRoadmapsSection />
       <WhyChooseYencooSection />
       <TestimonialsSection />

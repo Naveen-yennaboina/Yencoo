@@ -27,13 +27,16 @@ export function PaginationItem({ className, ...props }: React.ComponentProps<"li
   return <li className={cn("", className)} {...props} />;
 }
 
+import Link from "next/link";
+
 export function PaginationLink({
   className,
   isActive,
   size = "icon",
+  href,
   ...props
-}: React.ComponentProps<typeof Button> & { isActive?: boolean }) {
-  return (
+}: React.ComponentProps<typeof Button> & { isActive?: boolean; href?: string }) {
+  const content = (
     <Button
       aria-current={isActive ? "page" : undefined}
       variant={isActive ? "outline" : "ghost"}
@@ -42,10 +45,17 @@ export function PaginationLink({
       {...props}
     />
   );
+  
+  if (href) {
+    return <Link href={href}>{content}</Link>;
+  }
+  
+  return content;
 }
 
 export function PaginationPrevious({
   className,
+  href,
   ...props
 }: React.ComponentProps<typeof PaginationLink>) {
   return (
@@ -53,6 +63,7 @@ export function PaginationPrevious({
       aria-label="Go to previous page"
       size="default"
       className={cn("gap-1 pl-2.5", className)}
+      href={href}
       {...props}
     >
       <ChevronLeft className="h-4 w-4" />
@@ -63,6 +74,7 @@ export function PaginationPrevious({
 
 export function PaginationNext({
   className,
+  href,
   ...props
 }: React.ComponentProps<typeof PaginationLink>) {
   return (
@@ -70,6 +82,7 @@ export function PaginationNext({
       aria-label="Go to next page"
       size="default"
       className={cn("gap-1 pr-2.5", className)}
+      href={href}
       {...props}
     >
       <span>Next</span>
