@@ -15,8 +15,13 @@ datasource db {
 
 enum UserRole {
   USER
-  INSTRUCTOR
   ADMIN
+}
+
+enum LearningMode {
+  TEXT
+  AUDIO
+  INTERACTIVE
 }
 
 enum MembershipType {
@@ -54,6 +59,32 @@ enum OTPPurpose {
 // Models
 // -----------------------------------------------------------------------------
 
+model Language {
+  id         String   @id @default(uuid()) @db.Uuid
+  code       String   @unique @db.VarChar(10)
+  name       String
+  nativeName String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  userPreferences UserPreference[]
+}
+
+model Category {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String     @unique
+  slug      String     @unique
+  parentId  String?    @db.Uuid
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  parent    Category?  @relation("CategoryToCategory", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Category[] @relation("CategoryToCategory")
+  courses   Course[]
+
+  @@index([parentId])
+}
+
 model Country {
   id        String   @id @default(uuid()) @db.Uuid
   code      String   @unique @db.VarChar(2)
@@ -80,6 +111,8 @@ model User {
 
   country        Country?  @relation(fields: [countryId], references: [id], onDelete: SetNull)
   
+  preference     UserPreference?
+  
   otpCodes       OTPCode[]
   payments       Payment[]
   enrollments    Enrollment[]
@@ -101,6 +134,21 @@ model OTPCode {
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model UserPreference {
+  id                  String       @id @default(uuid()) @db.Uuid
+  userId              String       @unique @db.Uuid
+  preferredLanguageId String?      @db.Uuid
+  preferredVoice      String?
+  preferredLearningMode LearningMode @default(TEXT)
+  preferredTimezone   String?
+  preferredCurrency   String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  language            Language?    @relation(fields: [preferredLanguageId], references: [id], onDelete: SetNull)
 }
 
 model Membership {
@@ -140,10 +188,18 @@ model Course {
   thumbnailUrl    String?
   status          CourseStatus    @default(DRAFT)
   difficultyLevel DifficultyLevel @default(BEGINNER)
+  audioEnabled         Boolean         @default(false)
+  aiExplanationEnabled Boolean         @default(false)
+  translationEnabled   Boolean         @default(false)
+  estimatedAudioDuration Int?          // in minutes
+  categoryId      String?         @db.Uuid
+  learningOutcomes String[]
+  requirements    String[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   deletedAt       DateTime?       // Soft delete
 
+  category        Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   modules         CourseModule[]
   enrollments     Enrollment[]
   roadmapCourses  RoadmapCourse[]
@@ -151,6 +207,7 @@ model Course {
 
   @@index([status])
   @@index([slug])
+  @@index([categoryId])
 }
 
 model CourseModule {

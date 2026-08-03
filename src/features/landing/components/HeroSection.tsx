@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -9,6 +10,8 @@ import { Container } from "@/components/ui/Container";
 import { H1, Lead } from "@/components/ui/Typography";
 
 export function HeroSection() {
+  const router = useRouter();
+  
   return (
     <section className="relative overflow-hidden pt-24 pb-32 lg:pt-36 lg:pb-40">
       {/* Background gradients */}
@@ -36,16 +39,12 @@ export function HeroSection() {
           </Lead>
           
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-            <Button size="lg" className="w-full sm:w-auto group" asChild>
-              <Link href="/signup">
-                Start Learning
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
+            <Button size="lg" className="w-full sm:w-auto group" onClick={() => router.push("/signup")}>
+              Start Learning
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto bg-background/50 backdrop-blur-sm" asChild>
-              <Link href="/courses">
-                Explore Courses
-              </Link>
+            <Button size="lg" variant="outline" className="w-full sm:w-auto bg-background/50 backdrop-blur-sm" onClick={() => router.push("/courses")}>
+              Explore Courses
             </Button>
           </div>
         </motion.div>

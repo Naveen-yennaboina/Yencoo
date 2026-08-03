@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +18,7 @@ const navLinks = [
 export function Navbar() {
   const [isOpen, setIsOpen] = React.useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
@@ -42,11 +43,11 @@ export function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
-          <Button variant="ghost" asChild>
-            <Link href="/login">Log in</Link>
+          <Button variant="ghost" onClick={() => router.push("/login")}>
+            Log in
           </Button>
-          <Button asChild>
-            <Link href="/signup">Sign up</Link>
+          <Button onClick={() => router.push("/signup")}>
+            Sign up
           </Button>
         </div>
 
@@ -80,11 +81,11 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="border-t pt-4 flex flex-col gap-2 px-4">
-                <Button variant="outline" className="w-full" asChild onClick={() => setIsOpen(false)}>
-                  <Link href="/login">Log in</Link>
+                <Button variant="outline" className="w-full" onClick={() => { setIsOpen(false); router.push("/login"); }}>
+                  Log in
                 </Button>
-                <Button className="w-full" asChild onClick={() => setIsOpen(false)}>
-                  <Link href="/signup">Sign up</Link>
+                <Button className="w-full" onClick={() => { setIsOpen(false); router.push("/signup"); }}>
+                  Sign up
                 </Button>
               </div>
             </Container>

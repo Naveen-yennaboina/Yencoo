@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { Container } from "@/components/ui/Container";
@@ -43,6 +44,8 @@ const plans = [
 ];
 
 export function PricingPreviewSection() {
+  const router = useRouter();
+
   return (
     <section className="py-24 relative overflow-hidden">
       {/* Background decoration */}
@@ -92,8 +95,8 @@ export function PricingPreviewSection() {
                 ))}
               </div>
 
-              <Button variant={plan.buttonVariant} size="lg" className="w-full" asChild>
-                <Link href="/signup">{plan.buttonText}</Link>
+              <Button variant={plan.buttonVariant} size="lg" className="w-full" onClick={() => router.push("/signup")}>
+                {plan.buttonText}
               </Button>
             </motion.div>
           ))}
