@@ -8,8 +8,8 @@ export const springConfig = {
 };
 
 // Smooth easing for transitions
-export const easeInOut = [0.4, 0, 0.2, 1];
-export const easeOut = [0, 0, 0.2, 1];
+export const easeInOut = [0.4, 0, 0.2, 1] as const;
+export const easeOut = [0, 0, 0.2, 1] as const;
 
 export const fadeIn: Variants = {
   initial: { opacity: 0 },

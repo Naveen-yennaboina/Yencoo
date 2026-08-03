@@ -35,7 +35,7 @@ export const Toast = React.forwardRef<HTMLDivElement, ToastProps>(
               variants[variant],
               className
             )}
-            {...props}
+            {...(props as any)}
           >
             <div className="flex flex-col gap-1">
               {title && <div className="text-sm font-semibold">{title}</div>}
