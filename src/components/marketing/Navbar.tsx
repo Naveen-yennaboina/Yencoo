@@ -16,10 +16,19 @@ const navLinks = [
   { name: "Contact", href: "/contact" },
 ];
 
-export function Navbar() {
+export function Navbar({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to sign out", error);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
@@ -45,12 +54,25 @@ export function Navbar() {
 
         <div className="hidden md:flex items-center gap-4">
           <ThemeToggle />
-          <Button variant="ghost" onClick={() => router.push("/login")}>
-            Log in
-          </Button>
-          <Button onClick={() => router.push("/signup")}>
-            Sign up
-          </Button>
+          {isAuthenticated ? (
+            <>
+              <Button variant="ghost" onClick={() => router.push("/dashboard")}>
+                Dashboard
+              </Button>
+              <Button variant="outline" onClick={handleSignOut}>
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" onClick={() => router.push("/login")}>
+                Log in
+              </Button>
+              <Button onClick={() => router.push("/signup")}>
+                Sign up
+              </Button>
+            </>
+          )}
         </div>
 
         <div className="md:hidden flex items-center gap-2">
@@ -94,12 +116,25 @@ export function Navbar() {
               ))}
               <hr className="my-2 border-border" />
               <div className="flex flex-col gap-2 px-4">
-                <Button variant="outline" className="w-full" onClick={() => { setIsOpen(false); router.push("/login"); }}>
-                  Log in
-                </Button>
-                <Button className="w-full" onClick={() => { setIsOpen(false); router.push("/signup"); }}>
-                  Sign up
-                </Button>
+                {isAuthenticated ? (
+                  <>
+                    <Button variant="outline" className="w-full" onClick={() => { setIsOpen(false); router.push("/dashboard"); }}>
+                      Dashboard
+                    </Button>
+                    <Button variant="destructive" className="w-full" onClick={() => { setIsOpen(false); handleSignOut(); }}>
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" className="w-full" onClick={() => { setIsOpen(false); router.push("/login"); }}>
+                      Log in
+                    </Button>
+                    <Button className="w-full" onClick={() => { setIsOpen(false); router.push("/signup"); }}>
+                      Sign up
+                    </Button>
+                  </>
+                )}
               </div>
             </Container>
           </motion.div>

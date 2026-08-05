@@ -3,11 +3,14 @@ import { Container } from "@/components/ui/Container";
 import { siteConfig } from "@/config/site";
 import Image from "next/image";
 import { Navbar } from "@/components/marketing/Navbar";
+import { getSession } from "@/lib/auth/session";
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
+  
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <Navbar />
+      <Navbar isAuthenticated={!!session} />
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2">
       {/* Left Branding Side - Desktop Only */}
       <div className="hidden md:flex flex-col justify-between bg-primary/5 border-r border-border/50 p-12 lg:p-24 relative overflow-hidden">

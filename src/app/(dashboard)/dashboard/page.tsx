@@ -1,9 +1,17 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { db } from "@/lib/db";
-import { H1, H3, MutedText, P } from "@/components/ui/Typography";
-import { Button } from "@/components/ui/Button";
 import { BookOpen, Bookmark, Clock, CreditCard, PlayCircle } from "lucide-react";
+import Link from "next/link";
+import { PageContainer } from "@/components/dashboard/layout/PageContainer";
+import { PageHeader } from "@/components/dashboard/layout/PageHeader";
+import { DashboardGrid } from "@/components/dashboard/layout/DashboardGrid";
+import { DashboardCard } from "@/components/dashboard/cards/DashboardCard";
+import { FeatureCard } from "@/components/dashboard/cards/FeatureCard";
+import { StatCard } from "@/components/dashboard/cards/StatCard";
+import { ActionButton } from "@/components/dashboard/common/ActionButton";
+import { getUserAnalytics } from "@/actions/analytics-actions";
+import { Flame, Target, Trophy, Laptop } from "lucide-react";
 
 export const metadata = {
   title: "Dashboard - Yencoo",
@@ -27,81 +35,107 @@ export default async function DashboardPage() {
   }
 
   const firstName = user.firstName || "Learner";
+  const analytics = await getUserAnalytics(session.sub);
 
   return (
-    <div className="p-6 md:p-10 max-w-6xl mx-auto space-y-10">
-      <header>
-        <H1 className="mb-2">Welcome, {firstName}</H1>
-        <MutedText>Here is an overview of your learning progress.</MutedText>
-      </header>
+    <PageContainer size="wide">
+      <PageHeader 
+        title={`Welcome back, ${firstName}`} 
+        description="Here is an overview of your learning progress and recent activity."
+      />
 
-      {/* Continue Learning */}
-      <section className="bg-card border border-border rounded-xl p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row gap-6 items-center">
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center gap-2 text-primary mb-2">
-              <PlayCircle className="w-5 h-5" />
-              <span className="text-sm font-semibold uppercase tracking-wider">Continue Learning</span>
+      <div className="flex flex-col gap-8">
+        {/* Analytics Grid */}
+        <DashboardGrid cols={4}>
+          <StatCard
+            title="Learning Streak"
+            value={`${analytics.currentStreak} Days`}
+            description={`Longest: ${analytics.longestStreak} days`}
+            icon={<Flame className="w-5 h-5 text-orange-500" />}
+          />
+          <StatCard
+            title="Time Spent"
+            value={`${analytics.totalTimeSpentHours}h`}
+            description="Total learning time"
+            icon={<Clock className="w-5 h-5 text-blue-500" />}
+          />
+          <StatCard
+            title="Completed Lessons"
+            value={analytics.completedLessons}
+            description="Total finished"
+            icon={<Trophy className="w-5 h-5 text-yellow-500" />}
+          />
+          <StatCard
+            title="Active Courses"
+            value={analytics.activeCourses}
+            description="Currently in progress"
+            icon={<Laptop className="w-5 h-5 text-green-500" />}
+          />
+        </DashboardGrid>
+        {/* Continue Learning */}
+        <DashboardCard className="bg-gradient-to-r from-card to-muted/50 border-primary/20 shadow-md">
+          <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2 text-primary mb-2">
+                <PlayCircle className="w-5 h-5" />
+                <span className="text-sm font-semibold uppercase tracking-wider">Continue Learning</span>
+              </div>
+              <h2 className="text-2xl font-bold tracking-tight text-foreground">Getting Started with Yencoo</h2>
+              <p className="text-muted-foreground text-sm md:text-base">Pick up where you left off and complete your first course.</p>
             </div>
-            <H3>Getting Started with Yencoo</H3>
-            <P>Pick up where you left off and complete your first course.</P>
+            <ActionButton size="lg" className="w-full md:w-auto mt-4 md:mt-0 shadow-lg">
+              Resume Course
+            </ActionButton>
           </div>
-          <Button size="lg" className="w-full md:w-auto">
-            Resume Course
-          </Button>
-        </div>
-      </section>
+        </DashboardCard>
 
-      {/* Grid sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* My Courses */}
-        <div className="bg-card border border-border rounded-xl p-6 flex flex-col items-start gap-4 shadow-sm hover:border-primary/30 transition-colors">
-          <div className="p-3 bg-primary/10 text-primary rounded-lg">
-            <BookOpen className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="font-semibold text-lg">My Courses</h4>
-            <MutedText className="text-sm">View your enrolled courses</MutedText>
-          </div>
-          <Button variant="outline" className="w-full mt-auto">View All</Button>
-        </div>
+        {/* Grid sections */}
+        <DashboardGrid cols={4}>
+          <FeatureCard
+            title="My Courses"
+            description="View your enrolled courses"
+            icon={<BookOpen className="w-5 h-5 md:w-6 md:h-6" />}
+            action={
+              <Link href="/dashboard/courses" className="w-full">
+                <ActionButton variant="outline" className="w-full">View All</ActionButton>
+              </Link>
+            }
+          />
+          
+          <FeatureCard
+            title="Bookmarks"
+            description="Saved lessons and articles"
+            icon={<Bookmark className="w-5 h-5 md:w-6 md:h-6" />}
+            action={
+              <Link href="/dashboard/bookmarks" className="w-full">
+                <ActionButton variant="outline" className="w-full">View Saved</ActionButton>
+              </Link>
+            }
+          />
 
-        {/* Bookmarks */}
-        <div className="bg-card border border-border rounded-xl p-6 flex flex-col items-start gap-4 shadow-sm hover:border-primary/30 transition-colors">
-          <div className="p-3 bg-primary/10 text-primary rounded-lg">
-            <Bookmark className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="font-semibold text-lg">Bookmarks</h4>
-            <MutedText className="text-sm">Saved lessons and articles</MutedText>
-          </div>
-          <Button variant="outline" className="w-full mt-auto">View Saved</Button>
-        </div>
+          <FeatureCard
+            title="Recent Activity"
+            description="Check your latest actions"
+            icon={<Clock className="w-5 h-5 md:w-6 md:h-6" />}
+            action={
+              <Link href="/dashboard/progress" className="w-full">
+                <ActionButton variant="outline" className="w-full">View History</ActionButton>
+              </Link>
+            }
+          />
 
-        {/* Recent Activity */}
-        <div className="bg-card border border-border rounded-xl p-6 flex flex-col items-start gap-4 shadow-sm hover:border-primary/30 transition-colors">
-          <div className="p-3 bg-primary/10 text-primary rounded-lg">
-            <Clock className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="font-semibold text-lg">Recent Activity</h4>
-            <MutedText className="text-sm">Check your latest actions</MutedText>
-          </div>
-          <Button variant="outline" className="w-full mt-auto">View History</Button>
-        </div>
-
-        {/* Membership */}
-        <div className="bg-card border border-border rounded-xl p-6 flex flex-col items-start gap-4 shadow-sm hover:border-primary/30 transition-colors">
-          <div className="p-3 bg-primary/10 text-primary rounded-lg">
-            <CreditCard className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="font-semibold text-lg">Membership</h4>
-            <MutedText className="text-sm">Manage your billing and plan</MutedText>
-          </div>
-          <Button variant="outline" className="w-full mt-auto">Manage Plan</Button>
-        </div>
+          <FeatureCard
+            title="Membership"
+            description="Manage your billing and plan"
+            icon={<CreditCard className="w-5 h-5 md:w-6 md:h-6" />}
+            action={
+              <Link href="/dashboard/billing" className="w-full">
+                <ActionButton variant="outline" className="w-full">Manage Plan</ActionButton>
+              </Link>
+            }
+          />
+        </DashboardGrid>
       </div>
-    </div>
+    </PageContainer>
   );
 }

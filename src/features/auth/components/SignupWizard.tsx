@@ -123,6 +123,7 @@ export function SignupWizard() {
         }
         
         router.push("/dashboard");
+        router.refresh();
         return;
       }
 

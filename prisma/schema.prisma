@@ -16,12 +16,22 @@ datasource db {
 enum UserRole {
   USER
   ADMIN
+  OWNER
+  EDITOR
+  INSTRUCTOR
+  SUPPORT
 }
 
 enum LearningMode {
   TEXT
   AUDIO
   INTERACTIVE
+}
+
+enum LessonType {
+  TEXT
+  VIDEO
+  QUIZ
 }
 
 enum MembershipType {
@@ -130,6 +140,8 @@ model User {
   firstName      String?
   lastName       String?
   avatarUrl      String?
+  bio            String?
+  phone          String?
   role           UserRole @default(USER)
   countryId      String?  @db.Uuid
 
@@ -150,6 +162,12 @@ model User {
   orders           Order[]
   purchasedCourses PurchasedCourse[]
   invoices         Invoice[]
+  notes            Note[]
+  aiConversations  AiConversation[]
+  notifications    Notification[]
+  certificates     Certificate[]
+  streak           UserStreak?
+  quizAttempts     QuizAttempt[]
 
   @@index([email])
 }
@@ -241,6 +259,7 @@ model Course {
   roadmapCourses RoadmapCourse[]
   feedbacks      Feedback[]
   purchasedBy    PurchasedCourse[]
+  certificates   Certificate[]
 
   @@index([status])
   @@index([slug])
@@ -264,30 +283,36 @@ model CourseModule {
 }
 
 model Lesson {
-  id        String   @id @default(uuid()) @db.Uuid
-  moduleId  String   @db.Uuid
+  id        String     @id @default(uuid()) @db.Uuid
+  moduleId  String     @db.Uuid
   title     String
-  content   String?  @db.Text
+  type      LessonType @default(TEXT)
+  content   String?    @db.Text
   videoUrl  String?
-  order     Int      @default(0)
-  isFree    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  order     Int        @default(0)
+  isFree    Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
-  module    CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  progress  LessonProgress[]
-  bookmarks Bookmark[]
+  module          CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress        LessonProgress[]
+  bookmarks       Bookmark[]
+  notes           Note[]
+  aiConversations AiConversation[]
+  quiz            Quiz?
 
   @@unique([moduleId, order])
   @@index([moduleId])
 }
 
 model Enrollment {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  courseId  String   @db.Uuid
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  courseId        String   @db.Uuid
+  progressPercent Int      @default(0)
+  timeSpent       Int      @default(0) // in seconds
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -304,6 +329,7 @@ model LessonProgress {
   enrollmentId String    @db.Uuid
   lessonId     String    @db.Uuid
   isCompleted  Boolean   @default(false)
+  timeSpent    Int       @default(0) // in seconds
   completedAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -481,4 +507,137 @@ model PaymentWebhookLog {
   processed Boolean  @default(false)
   error     String?
   createdAt DateTime @default(now())
+}
+
+model Note {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  lessonId  String   @db.Uuid
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+}
+
+model AiConversation {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  lessonId  String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson   Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  messages AiMessage[]
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+}
+
+model AiMessage {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationId String   @db.Uuid
+  role           String   // 'user' | 'assistant'
+  content        String   @db.Text
+  createdAt      DateTime @default(now())
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  title     String
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Certificate {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  courseId   String   @db.Uuid
+  issuedAt   DateTime @default(now())
+  pdfUrl     String?
+  verifyCode String   @unique
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+}
+
+// -----------------------------------------------------------------------------
+// Learning Engine Extensions
+// -----------------------------------------------------------------------------
+
+model UserStreak {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @unique @db.Uuid
+  currentStreak   Int      @default(0)
+  longestStreak   Int      @default(0)
+  lastActiveDate  DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Quiz {
+  id           String   @id @default(uuid()) @db.Uuid
+  lessonId     String   @unique @db.Uuid
+  passingScore Int      @default(80)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  lesson    Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+}
+
+model QuizQuestion {
+  id          String   @id @default(uuid()) @db.Uuid
+  quizId      String   @db.Uuid
+  text        String   @db.Text
+  order       Int      @default(0)
+  explanation String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  quiz    Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options QuizOption[]
+}
+
+model QuizOption {
+  id         String   @id @default(uuid()) @db.Uuid
+  questionId String   @db.Uuid
+  text       String
+  isCorrect  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  question QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model QuizAttempt {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  quizId    String   @db.Uuid
+  score     Int
+  passed    Boolean
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
 }
